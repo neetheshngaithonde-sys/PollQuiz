@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: pollquiz-mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: pollquiz
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - pollquiz-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: pollquiz-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - pollquiz-net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: pollquiz-backend
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - MONGO_URI=mongodb://mongodb:27017
+      - DB_NAME=pollquiz
+      - REDIS_ADDR=redis:6379
+      - REDIS_PASSWORD=
+      - JWT_SECRET=production-secret-jwt-pollquiz-2026
+      - FRONTEND_URL=http://localhost
+    depends_on:
+      - mongodb
+      - redis
+    networks:
+      - pollquiz-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: pollquiz-frontend
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - pollquiz-net
+
+volumes:
+  mongo_data:
+  redis_data:
+
+networks:
+  pollquiz-net:
+    driver: bridge
