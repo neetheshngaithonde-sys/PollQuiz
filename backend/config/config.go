@@ -8,13 +8,14 @@ import (
 )
 
 type Config struct {
-	Port         string
-	MongoURI     string
-	DBName       string
-	RedisAddr    string
+	Port          string
+	MongoURI      string
+	DBName        string
+	RedisURL      string
+	RedisAddr     string
 	RedisPassword string
-	JWTSecret    string
-	FrontendURL  string
+	JWTSecret     string
+	FrontendURL   string
 }
 
 func LoadConfig() *Config {
@@ -26,6 +27,7 @@ func LoadConfig() *Config {
 		Port:          getEnv("PORT", "8080"),
 		MongoURI:      getEnv("MONGO_URI", "mongodb://127.0.0.1:27017"),
 		DBName:        getEnv("DB_NAME", "pollquiz"),
+		RedisURL:      getEnv("REDIS_URL", ""),
 		RedisAddr:     getEnv("REDIS_ADDR", "127.0.0.1:6379"),
 		RedisPassword: getEnv("REDIS_PASSWORD", ""),
 		JWTSecret:     getEnv("JWT_SECRET", "super-secret-pollquiz-jwt-key-2026"),

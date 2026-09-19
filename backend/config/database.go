@@ -23,6 +23,6 @@ func ConnectMongoDB(cfg *Config) (*mongo.Database, error) {
 		return nil, err
 	}
 
-	log.Printf("Connected to MongoDB at %s, database: %s", cfg.MongoURI, cfg.DBName)
+	log.Printf("Connected to MongoDB successfully, database: %s", cfg.DBName)
 	return client.Database(cfg.DBName), nil
 }
