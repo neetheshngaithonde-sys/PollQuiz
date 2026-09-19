@@ -14,6 +14,7 @@ export async function apiRequest(endpoint, options = {}) {
 
   const headers = {
     'Content-Type': 'application/json',
+    'Bypass-Tunnel-Reminder': 'true',
     ...(token && { Authorization: `Bearer ${token}` }),
     ...options.headers,
   };
