@@ -23,15 +23,28 @@ func LoadConfig() *Config {
 		log.Println(".env file not found or failed to load, reading from environment variables")
 	}
 
+	mongoURI := getEnv("MONGO_URI", "")
+	if mongoURI == "" {
+		mongoURI = getEnv("MONGO_URL", "")
+	}
+	if mongoURI == "" {
+		mongoURI = getEnv("MONGODB_URL", "mongodb://127.0.0.1:27017")
+	}
+
+	redisURL := getEnv("REDIS_URL", "")
+	if redisURL == "" {
+		redisURL = getEnv("REDIS_PRIVATE_URL", "")
+	}
+
 	return &Config{
 		Port:          getEnv("PORT", "8080"),
-		MongoURI:      getEnv("MONGO_URI", "mongodb://127.0.0.1:27017"),
+		MongoURI:      mongoURI,
 		DBName:        getEnv("DB_NAME", "pollquiz"),
-		RedisURL:      getEnv("REDIS_URL", ""),
+		RedisURL:      redisURL,
 		RedisAddr:     getEnv("REDIS_ADDR", "127.0.0.1:6379"),
 		RedisPassword: getEnv("REDIS_PASSWORD", ""),
 		JWTSecret:     getEnv("JWT_SECRET", "super-secret-pollquiz-jwt-key-2026"),
-		FrontendURL:   getEnv("FRONTEND_URL", "http://localhost:5173"),
+		FrontendURL:   getEnv("FRONTEND_URL", "https://poll-quiz.vercel.app"),
 	}
 }
 
