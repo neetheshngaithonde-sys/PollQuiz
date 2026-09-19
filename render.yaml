@@ -19,4 +19,4 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: FRONTEND_URL
-        sync: false
+        value: https://poll-quiz.vercel.app
