@@ -3,7 +3,7 @@ function getApiBaseUrl() {
     return import.meta.env.VITE_API_URL;
   }
   if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-    return 'https://pollquiz-api-live.loca.lt/api';
+    return 'https://single-lisa-diagram-emotions.trycloudflare.com/api';
   }
   return 'http://localhost:8080/api';
 }

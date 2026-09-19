@@ -8,7 +8,7 @@ function getWsBaseUrl() {
   }
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
   if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-    return `${protocol}//pollquiz-api-live.loca.lt/ws`;
+    return `${protocol}//single-lisa-diagram-emotions.trycloudflare.com/ws`;
   }
   return `${protocol}//${window.location.hostname}:8080/ws`;
 }
