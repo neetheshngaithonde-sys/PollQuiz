@@ -148,7 +148,7 @@ export default function PublicPoll({ pollId, navigate, onShowToast }) {
           lineHeight: 1.35,
           letterSpacing: '-0.02em',
           marginBottom: '1.75rem',
-          color: '#ffffff',
+          color: '#09020e',
         }}>
           {poll.question}
         </h1>
@@ -161,14 +161,14 @@ export default function PublicPoll({ pollId, navigate, onShowToast }) {
             justifyContent: 'space-between',
             padding: '0.9rem 1.25rem',
             borderRadius: '0.875rem',
-            background: 'rgba(99, 102, 241, 0.15)',
+            background: 'rgba(56, 57, 92, 0.15)',
             border: '1px solid var(--border-highlight)',
             marginBottom: '1.75rem',
             gap: '0.75rem',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
               <CheckCircle2 size={18} color="#818cf8" />
-              <span style={{ fontSize: '0.9rem', color: '#c7d2fe', fontWeight: 600 }}>
+              <span style={{ fontSize: '0.9rem', color: '#050608', fontWeight: 600 }}>
                 You have already voted on this poll!
               </span>
             </div>
@@ -222,7 +222,7 @@ export default function PublicPoll({ pollId, navigate, onShowToast }) {
                   <div className="custom-radio">
                     <div className="custom-radio-inner"></div>
                   </div>
-                  <span style={{ fontSize: '1.05rem', fontWeight: 600, color: '#f8fafc' }}>
+                  <span style={{ fontSize: '1.05rem', fontWeight: 600, color: '#0e0f10' }}>
                     {opt.text}
                   </span>
                 </div>
