@@ -1,6 +1,15 @@
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+function getApiBaseUrl() {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  if (typeof window !== 'undefined' && (window.location.port === '5173' || window.location.hostname !== 'localhost')) {
+    return '/api';
+  }
+  return 'http://localhost:8080/api';
+}
 
 export async function apiRequest(endpoint, options = {}) {
+  const BASE_URL = getApiBaseUrl();
   const token = localStorage.getItem('pollquiz_token');
 
   const headers = {

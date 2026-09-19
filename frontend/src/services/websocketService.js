@@ -7,6 +7,9 @@ function getWsBaseUrl() {
     return envUrl;
   }
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  if (typeof window !== 'undefined' && (window.location.port === '5173' || window.location.hostname !== 'localhost')) {
+    return `${protocol}//${window.location.host}/ws`;
+  }
   return `${protocol}//${window.location.hostname}:8080/ws`;
 }
 

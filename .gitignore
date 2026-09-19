@@ -1,24 +1,8 @@
-# Dependencies
+﻿.env
+.env.*
+!.env.example
 node_modules/
-vendor/
-
-# Build artifacts
 dist/
 build/
-*.exe
-*.dll
-*.so
-*.dylib
-*.pdb
-
-# Environment variables & secrets (NEVER commit secrets)
-.env
-.env.local
-.env.*.local
-
-# Tools & temporary files
-tools/
-scratch/
+.vite/
 *.log
-.DS_Store
-Thumbs.db
