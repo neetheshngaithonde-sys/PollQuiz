@@ -2,28 +2,35 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { pollService } from '../services/pollService';
 import PollCard from '../components/PollCard';
-import { 
-  PlusCircle, 
-  BarChart2, 
-  Users, 
-  CheckCircle, 
-  ArrowRight, 
-  Sparkles,
+
+import {
+  PlusCircle,
+  BarChart3,
+  Users,
+  CheckCircle,
+  ArrowRight,
   Inbox,
-  KeyRound
+  KeyRound,
+  Clock3,
 } from 'lucide-react';
 
 export default function Dashboard({ navigate, onShowToast }) {
   const { user } = useAuth();
+
   const [polls, setPolls] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // ================= LOAD POLLS =================
+
   const loadPolls = async () => {
     try {
       setLoading(true);
+
       const data = await pollService.getMyPolls();
+
       setPolls(data || []);
+      setError('');
     } catch (err) {
       setError(err.message || 'Failed to load your polls');
     } finally {
@@ -35,14 +42,24 @@ export default function Dashboard({ navigate, onShowToast }) {
     loadPolls();
   }, []);
 
+  // ================= POLL ACTIONS =================
+
   const handleToggleStatus = async (pollId, nextActive) => {
     try {
       await pollService.toggleStatus(pollId, nextActive);
+
       setPolls((prev) =>
-        prev.map((p) => (p.id === pollId ? { ...p, is_active: nextActive } : p))
+        prev.map((poll) =>
+          poll.id === pollId
+            ? { ...poll, is_active: nextActive }
+            : poll
+        )
       );
+
       if (onShowToast) {
-        onShowToast(`Poll ${nextActive ? 'activated' : 'closed'} successfully`);
+        onShowToast(
+          `Poll ${nextActive ? 'activated' : 'closed'} successfully`
+        );
       }
     } catch (err) {
       alert(err.message || 'Failed to update poll status');
@@ -50,250 +67,643 @@ export default function Dashboard({ navigate, onShowToast }) {
   };
 
   const handleDeletePoll = async (pollId) => {
-    if (!window.confirm('Are you sure you want to delete this poll and all its votes?')) {
+    if (
+      !window.confirm(
+        'Are you sure you want to delete this poll and all its votes?'
+      )
+    ) {
       return;
     }
 
     try {
       await pollService.deletePoll(pollId);
-      setPolls((prev) => prev.filter((p) => p.id !== pollId));
-      if (onShowToast) onShowToast('Poll deleted successfully');
+
+      setPolls((prev) =>
+        prev.filter((poll) => poll.id !== pollId)
+      );
+
+      if (onShowToast) {
+        onShowToast('Poll deleted successfully');
+      }
     } catch (err) {
       alert(err.message || 'Failed to delete poll');
     }
   };
 
+  // ================= STATISTICS =================
+
   const totalPolls = polls.length;
-  const activePolls = polls.filter((p) => p.is_active).length;
-  const totalVotesCount = polls.reduce((acc, p) => acc + (p.total_votes || 0), 0);
+
+  const activePolls = polls.filter(
+    (poll) => poll.is_active
+  ).length;
+
+  const closedPolls = polls.filter(
+    (poll) => !poll.is_active
+  ).length;
+
+  const totalVotesCount = polls.reduce(
+    (total, poll) => total + (poll.total_votes || 0),
+    0
+  );
+
+  // ================= GREETING =================
 
   const getGreeting = () => {
     const hour = new Date().getHours();
+
     if (hour < 12) return 'Good morning';
     if (hour < 18) return 'Good afternoon';
+
     return 'Good evening';
   };
 
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
-      {/* Header & Greeting */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '1rem',
-      }}>
-        <div>
-          <h1 style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
-            {getGreeting()}, {user?.name?.split(' ')[0] || 'Creator'}!
-          </h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginTop: '0.25rem' }}>
-            Here is what's happening with your live audience polls.
-          </p>
-        </div>
+  // ================= STAT CARD =================
 
-        <button 
-          onClick={() => navigate('create-poll')}
-          className="btn btn-primary"
-          style={{ padding: '0.85rem 1.75rem' }}
-        >
-          <PlusCircle size={18} /> Create New Poll
-        </button>
-      </div>
-
-      {/* Metrics Row */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-        gap: '1.25rem',
-      }}>
-        {/* Total Polls */}
-        <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-          <div style={{
+  const StatCard = ({
+    icon,
+    title,
+    value,
+    description,
+    iconBackground,
+    iconColor,
+  }) => {
+    return (
+      <div
+        style={{
+          background: '#ffffff',
+          border: '1px solid #e5e7eb',
+          borderRadius: '16px',
+          padding: '1.35rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem',
+          boxShadow: '0 4px 14px rgba(15, 23, 42, 0.05)',
+          transition: 'all 0.2s ease',
+        }}
+        className="dashboard-stat-card"
+      >
+        <div
+          style={{
             width: '52px',
             height: '52px',
+            minWidth: '52px',
             borderRadius: '14px',
-            background: 'rgba(99, 102, 241, 0.15)',
+            background: iconBackground,
+            color: iconColor,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#818cf8',
-          }}>
-            <BarChart2 size={26} />
-          </div>
-          <div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-              Total Created
-            </div>
-            <div style={{ fontSize: '1.85rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-              {totalPolls}
-            </div>
-          </div>
-        </div>
-
-        {/* Active Polls */}
-        <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-          <div style={{
-            width: '52px',
-            height: '52px',
-            borderRadius: '14px',
-            background: 'rgba(16, 185, 129, 0.15)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#34d399',
-          }}>
-            <CheckCircle size={26} />
-          </div>
-          <div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-              Active Polls
-            </div>
-            <div style={{ fontSize: '1.85rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-              {activePolls}
-            </div>
-          </div>
-        </div>
-
-        {/* Total Votes */}
-        <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-          <div style={{
-            width: '52px',
-            height: '52px',
-            borderRadius: '14px',
-            background: 'rgba(244, 63, 94, 0.15)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#fb7185',
-          }}>
-            <Users size={26} />
-          </div>
-          <div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-              Audience Votes
-            </div>
-            <div style={{ fontSize: '1.85rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-              {totalVotesCount}
-            </div>
-          </div>
-        </div>
-
-        {/* Security & Password Card */}
-        <div 
-          className="glass-card" 
-          onClick={() => navigate('change-password')}
-          style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '1.25rem', 
-            cursor: 'pointer',
-            border: '1px solid rgba(245, 158, 11, 0.25)',
           }}
-          title="Manage Account Password & Security"
         >
-          <div style={{
-            width: '52px',
-            height: '52px',
-            borderRadius: '14px',
-            background: 'rgba(245, 158, 11, 0.15)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#fbbf24',
-          }}>
-            <KeyRound size={26} />
+          {icon}
+        </div>
+
+        <div style={{ minWidth: 0 }}>
+          <div
+            style={{
+              color: '#64748b',
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              marginBottom: '0.2rem',
+            }}
+          >
+            {title}
           </div>
-          <div>
-            <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-              Security
-            </div>
-            <div style={{ 
-              fontSize: '1rem', 
-              fontWeight: 700, 
-              color: 'var(--text-primary)', 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '0.35rem',
-              marginTop: '0.15rem' 
-            }}>
-              Password <ArrowRight size={14} color="#fbbf24" />
-            </div>
+
+          <div
+            style={{
+              color: '#0f172a',
+              fontSize: '1.75rem',
+              fontWeight: 800,
+              lineHeight: 1.2,
+            }}
+          >
+            {value}
+          </div>
+
+          <div
+            style={{
+              color: '#94a3b8',
+              fontSize: '0.75rem',
+              marginTop: '0.15rem',
+            }}
+          >
+            {description}
           </div>
         </div>
       </div>
+    );
+  };
 
-      {/* Recent Polls Section */}
-      <div>
-        <div style={{
+  // ================= MAIN UI =================
+
+  return (
+    <div
+      style={{
+        width: '100%',
+        maxWidth: '1250px',
+        margin: '0 auto',
+        padding: '2rem 1.5rem 4rem',
+        boxSizing: 'border-box',
+      }}
+    >
+      {/* ================================================= */}
+      {/* HEADER */}
+      {/* ================================================= */}
+
+      <section
+        style={{
+          background:
+            'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+          borderRadius: '20px',
+          padding: '2rem',
+          color: '#ffffff',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: '1.25rem',
-        }}>
-          <h2 style={{ fontSize: '1.35rem', fontWeight: 700 }}>
-            Recent Polls
-          </h2>
-          {polls.length > 0 && (
-            <button 
-              onClick={() => navigate('my-polls')}
-              className="btn btn-secondary btn-sm"
+          gap: '1.5rem',
+          marginBottom: '1.5rem',
+          boxShadow: '0 10px 30px rgba(37, 99, 235, 0.2)',
+        }}
+        className="dashboard-hero"
+      >
+        <div>
+          <div
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              background: 'rgba(255,255,255,0.15)',
+              padding: '0.35rem 0.7rem',
+              borderRadius: '20px',
+              fontSize: '0.75rem',
+              fontWeight: 600,
+              marginBottom: '0.75rem',
+            }}
+          >
+            <span
+              style={{
+                width: '6px',
+                height: '6px',
+                borderRadius: '50%',
+                background: '#ffffff',
+              }}
+            />
+            Live Dashboard
+          </div>
+
+          <h1
+            style={{
+              margin: 0,
+              fontSize: 'clamp(1.5rem, 3vw, 2.15rem)',
+              fontWeight: 800,
+              letterSpacing: '-0.03em',
+            }}
+          >
+            {getGreeting()},{' '}
+            {user?.name?.split(' ')[0] || 'Creator'}!
+          </h1>
+
+          <p
+            style={{
+              margin: '0.5rem 0 0',
+              color: 'rgba(255,255,255,0.85)',
+              fontSize: '0.95rem',
+            }}
+          >
+            Create polls, collect votes and engage your audience
+            in real time.
+          </p>
+        </div>
+
+        <button
+          onClick={() => navigate('create-poll')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem',
+            background: '#000000',
+            color: '#ffffff',
+            border: 'none',
+            borderRadius: '10px',
+            padding: '0.8rem 1.15rem',
+            fontSize: '0.9rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          <PlusCircle size={18} />
+          Create New Poll
+        </button>
+      </section>
+
+      {/* ================================================= */}
+      {/* STATISTICS */}
+      {/* ================================================= */}
+
+      <section style={{ marginBottom: '2rem' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '1rem',
+          }}
+        >
+          <div>
+            <h2
+              style={{
+                margin: 0,
+                color: '#0f172a',
+                fontSize: '1.25rem',
+                fontWeight: 800,
+              }}
             >
-              View All ({polls.length}) <ArrowRight size={14} />
+              Poll Overview
+            </h2>
+
+            <p
+              style={{
+                margin: '0.25rem 0 0',
+                color: '#64748b',
+                fontSize: '0.85rem',
+              }}
+            >
+              A quick look at your polling activity
+            </p>
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns:
+              'repeat(auto-fit, minmax(220px, 1fr))',
+            gap: '1rem',
+          }}
+        >
+          <StatCard
+            icon={<BarChart3 size={24} />}
+            title="Total Polls"
+            value={totalPolls}
+            description="Polls created"
+            iconBackground="#eff6ff"
+            iconColor="#2563eb"
+          />
+
+          <StatCard
+            icon={<CheckCircle size={24} />}
+            title="Active Polls"
+            value={activePolls}
+            description="Currently accepting votes"
+            iconBackground="#ecfdf5"
+            iconColor="#059669"
+          />
+
+          <StatCard
+            icon={<Users size={24} />}
+            title="Total Votes"
+            value={totalVotesCount}
+            description="Audience responses"
+            iconBackground="#f5f3ff"
+            iconColor="#7c3aed"
+          />
+
+          <StatCard
+            icon={<Clock3 size={24} />}
+            title="Closed Polls"
+            value={closedPolls}
+            description="No longer active"
+            iconBackground="#f8fafc"
+            iconColor="#475569"
+          />
+        </div>
+      </section>
+
+      {/* ================================================= */}
+      {/* QUICK ACTIONS */}
+      {/* ================================================= */}
+
+      <section
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+          gap: '1rem',
+          marginBottom: '2rem',
+        }}
+      >
+        {/* Create Poll */}
+        <div
+          onClick={() => navigate('create-poll')}
+          style={{
+            background: '#000000',
+            color: '#ffffff',
+            borderRadius: '16px',
+            padding: '1.25rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1rem',
+          }}
+        >
+          <div>
+            <div
+              style={{
+                fontSize: '0.75rem',
+                color: '#94a3b8',
+                fontWeight: 600,
+                marginBottom: '0.3rem',
+              }}
+            >
+              QUICK ACTION
+            </div>
+
+            <div
+              style={{
+                fontSize: '1rem',
+                fontWeight: 700,
+              }}
+            >
+              Create a new poll
+            </div>
+
+            <div
+              style={{
+                fontSize: '0.8rem',
+                color: '#cbd5e1',
+                marginTop: '0.25rem',
+              }}
+            >
+              Start engaging your audience
+            </div>
+          </div>
+
+          <ArrowRight size={20} />
+        </div>
+
+        {/* Security */}
+        <div
+          onClick={() => navigate('change-password')}
+          style={{
+            background: '#ffffff',
+            border: '1px solid #e5e7eb',
+            borderRadius: '16px',
+            padding: '1.25rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1rem',
+            boxShadow: '0 4px 14px rgba(15, 23, 42, 0.04)',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.9rem',
+            }}
+          >
+            <div
+              style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '12px',
+                background: '#eff6ff',
+                color: '#2563eb',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <KeyRound size={21} />
+            </div>
+
+            <div>
+              <div
+                style={{
+                  fontSize: '0.75rem',
+                  color: '#64748b',
+                  fontWeight: 600,
+                }}
+              >
+                ACCOUNT SECURITY
+              </div>
+
+              <div
+                style={{
+                  color: '#0f172a',
+                  fontSize: '0.95rem',
+                  fontWeight: 700,
+                  marginTop: '0.2rem',
+                }}
+              >
+                Change Password
+              </div>
+            </div>
+          </div>
+
+          <ArrowRight
+            size={18}
+            color="#64748b"
+          />
+        </div>
+      </section>
+
+      {/* ================================================= */}
+      {/* RECENT POLLS */}
+      {/* ================================================= */}
+
+      <section>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '1rem',
+            marginBottom: '1rem',
+          }}
+        >
+          <div>
+            <h2
+              style={{
+                margin: 0,
+                color: '#0f172a',
+                fontSize: '1.25rem',
+                fontWeight: 800,
+              }}
+            >
+              Recent Polls
+            </h2>
+
+            <p
+              style={{
+                margin: '0.25rem 0 0',
+                color: '#64748b',
+                fontSize: '0.85rem',
+              }}
+            >
+              Manage your latest polls
+            </p>
+          </div>
+
+          {polls.length > 0 && (
+            <button
+              onClick={() => navigate('my-polls')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                background: '#ffffff',
+                color: '#2563eb',
+                border: '1px solid #dbeafe',
+                borderRadius: '8px',
+                padding: '0.55rem 0.8rem',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              View All
+              <ArrowRight size={14} />
             </button>
           )}
         </div>
 
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
-            <div className="pulse-dot" style={{ margin: '0 auto 1rem auto' }}></div>
+        {/* Loading */}
+        {loading && (
+          <div
+            style={{
+              background: '#ffffff',
+              border: '1px solid #e5e7eb',
+              borderRadius: '16px',
+              padding: '3rem',
+              textAlign: 'center',
+              color: '#64748b',
+            }}
+          >
+            <div
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                border: '3px solid #dbeafe',
+                borderTopColor: '#2563eb',
+                margin: '0 auto 1rem',
+                animation: 'dashboardSpin 0.8s linear infinite',
+              }}
+            />
+
             Loading your polls...
           </div>
-        ) : error ? (
-          <div className="glass-card" style={{ color: 'var(--danger)', padding: '2rem', textAlign: 'center' }}>
+        )}
+
+        {/* Error */}
+        {!loading && error && (
+          <div
+            style={{
+              background: '#fef2f2',
+              border: '1px solid #fecaca',
+              color: '#dc2626',
+              borderRadius: '14px',
+              padding: '1.25rem',
+              textAlign: 'center',
+            }}
+          >
             {error}
           </div>
-        ) : polls.length === 0 ? (
-          <div className="glass-card" style={{
-            textAlign: 'center',
-            padding: '3.5rem 1.5rem',
-            border: '1.5px dashed var(--border-color)',
-          }}>
-            <div style={{
-              width: '60px',
-              height: '60px',
+        )}
+
+        {/* Empty State */}
+        {!loading && !error && polls.length === 0 && (
+          <div
+            style={{
+              background: '#ffffff',
+              border: '1px dashed #cbd5e1',
               borderRadius: '18px',
-              background: 'rgba(99, 102, 241, 0.12)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#818cf8',
-              marginBottom: '1rem',
-            }}>
-              <Inbox size={30} />
-            </div>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-              No polls created yet
-            </h3>
-            <p style={{ color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto 1.5rem auto' }}>
-              Get started by creating an interactive poll for your audience and watch live real-time votes stream in.
-            </p>
-            <button 
-              onClick={() => navigate('create-poll')}
-              className="btn btn-primary"
+              padding: '4rem 1.5rem',
+              textAlign: 'center',
+            }}
+          >
+            <div
+              style={{
+                width: '68px',
+                height: '68px',
+                borderRadius: '18px',
+                background: '#eff6ff',
+                color: '#2563eb',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 1.25rem',
+              }}
             >
-              <PlusCircle size={16} /> Create Your First Poll
+              <Inbox size={32} />
+            </div>
+
+            <h3
+              style={{
+                margin: 0,
+                color: '#0f172a',
+                fontSize: '1.25rem',
+                fontWeight: 800,
+              }}
+            >
+              No polls yet
+            </h3>
+
+            <p
+              style={{
+                maxWidth: '420px',
+                margin: '0.5rem auto 1.5rem',
+                color: '#64748b',
+                fontSize: '0.9rem',
+                lineHeight: 1.6,
+              }}
+            >
+              You haven't created any polls yet. Create your
+              first interactive poll and start collecting
+              real-time audience responses.
+            </p>
+
+            <button
+              onClick={() => navigate('create-poll')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                background: '#2563eb',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '9px',
+                padding: '0.75rem 1.1rem',
+                fontSize: '0.85rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              <PlusCircle size={17} />
+              Create Your First Poll
             </button>
           </div>
-        ) : (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-            gap: '1.25rem',
-          }}>
+        )}
+
+        {/* Poll Cards */}
+        {!loading && !error && polls.length > 0 && (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns:
+                'repeat(auto-fill, minmax(310px, 1fr))',
+              gap: '1rem',
+            }}
+          >
             {polls.slice(0, 6).map((poll) => (
-              <PollCard 
+              <PollCard
                 key={poll.id}
                 poll={poll}
                 navigate={navigate}
@@ -304,7 +714,44 @@ export default function Dashboard({ navigate, onShowToast }) {
             ))}
           </div>
         )}
-      </div>
+      </section>
+
+      {/* ================================================= */}
+      {/* RESPONSIVE / ANIMATION */}
+      {/* ================================================= */}
+
+      <style>
+        {`
+          @keyframes dashboardSpin {
+            to {
+              transform: rotate(360deg);
+            }
+          }
+
+          .dashboard-stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 22px rgba(15, 23, 42, 0.09) !important;
+          }
+
+          @media (max-width: 768px) {
+            .dashboard-hero {
+              padding: 1.5rem !important;
+              flex-direction: column !important;
+              align-items: flex-start !important;
+            }
+
+            .dashboard-hero button {
+              width: 100%;
+            }
+          }
+
+          @media (max-width: 480px) {
+            .dashboard-stat-card {
+              padding: 1rem !important;
+            }
+          }
+        `}
+      </style>
     </div>
   );
 }
