@@ -2,8 +2,8 @@ function getApiBaseUrl() {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
-  if (typeof window !== 'undefined' && (window.location.port === '5173' || window.location.hostname !== 'localhost')) {
-    return '/api';
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+    return 'https://pollquiz-api-live.loca.lt/api';
   }
   return 'http://localhost:8080/api';
 }
