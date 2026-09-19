@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+
 import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -17,90 +18,171 @@ import NotFound from './pages/NotFound';
 
 function AppContent() {
   const { isAuthenticated, loading } = useAuth();
+
   const [currentRoute, setCurrentRoute] = useState(() => {
-    const hash = window.location.hash.replace('#', '').replace(/^\//, '');
-    if (hash) return hash;
-    return 'landing';
+    const hash = window.location.hash
+      .replace('#', '')
+      .replace(/^\//, '');
+
+    return hash || (isAuthenticated ? 'dashboard' : 'landing');
   });
 
   const [toastMessage, setToastMessage] = useState('');
 
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(''), 3000);
+  // -----------------------------
+  // Toast
+  // -----------------------------
+  const showToast = (message) => {
+    setToastMessage(message);
+
+    setTimeout(() => {
+      setToastMessage('');
+    }, 3000);
   };
 
+  // -----------------------------
+  // Navigation
+  // -----------------------------
   const navigate = (route) => {
     window.location.hash = route;
     setCurrentRoute(route);
-    window.scrollTo(0, 0);
+
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
   };
 
+  // -----------------------------
+  // Handle browser hash changes
+  // -----------------------------
   useEffect(() => {
     const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '').replace(/^\//, '');
-      setCurrentRoute(hash || (isAuthenticated ? 'dashboard' : 'landing'));
+      const hash = window.location.hash
+        .replace('#', '')
+        .replace(/^\//, '');
+
+      setCurrentRoute(
+        hash || (isAuthenticated ? 'dashboard' : 'landing')
+      );
+
+      window.scrollTo(0, 0);
     };
 
     window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
   }, [isAuthenticated]);
 
-  // Route matching logic
+  // -----------------------------
+  // Route Rendering
+  // -----------------------------
   const renderRoute = () => {
+    // Loading screen
     if (loading) {
       return (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
-          <div className="pulse-dot" style={{ width: '12px', height: '12px' }}></div>
+        <div className="app-loading">
+          <div className="loading-spinner"></div>
+          <p>Loading Poll Quiz...</p>
         </div>
       );
     }
 
-    // Public Poll Voting Page: poll/:id
-    if (currentRoute.startsWith('poll/') && !currentRoute.endsWith('/results')) {
+    // --------------------------------
+    // Public Poll
+    // /poll/:id
+    // --------------------------------
+    if (
+      currentRoute.startsWith('poll/') &&
+      !currentRoute.endsWith('/results')
+    ) {
       const pollId = currentRoute.split('/')[1];
-      return <PublicPoll pollId={pollId} navigate={navigate} onShowToast={showToast} />;
+
+      return (
+        <PublicPoll
+          pollId={pollId}
+          navigate={navigate}
+          onShowToast={showToast}
+        />
+      );
     }
 
-    // Live Results Page: poll/:id/results
-    if (currentRoute.startsWith('poll/') && currentRoute.endsWith('/results')) {
+    // --------------------------------
+    // Live Results
+    // /poll/:id/results
+    // --------------------------------
+    if (
+      currentRoute.startsWith('poll/') &&
+      currentRoute.endsWith('/results')
+    ) {
       const parts = currentRoute.split('/');
       const pollId = parts[1];
-      return <LiveResults pollId={pollId} navigate={navigate} onShowToast={showToast} />;
+
+      return (
+        <LiveResults
+          pollId={pollId}
+          navigate={navigate}
+          onShowToast={showToast}
+        />
+      );
     }
 
+    // --------------------------------
+    // Normal Routes
+    // --------------------------------
     switch (currentRoute) {
       case '':
       case 'landing':
         return <Landing navigate={navigate} />;
+
       case 'login':
         return <Login navigate={navigate} />;
+
       case 'signup':
         return <Signup navigate={navigate} />;
+
       case 'dashboard':
         return (
           <ProtectedRoute navigate={navigate}>
-            <Dashboard navigate={navigate} onShowToast={showToast} />
+            <Dashboard
+              navigate={navigate}
+              onShowToast={showToast}
+            />
           </ProtectedRoute>
         );
+
       case 'create-poll':
         return (
           <ProtectedRoute navigate={navigate}>
-            <CreatePoll navigate={navigate} onShowToast={showToast} />
+            <CreatePoll
+              navigate={navigate}
+              onShowToast={showToast}
+            />
           </ProtectedRoute>
         );
+
       case 'my-polls':
         return (
           <ProtectedRoute navigate={navigate}>
-            <MyPolls navigate={navigate} onShowToast={showToast} />
+            <MyPolls
+              navigate={navigate}
+              onShowToast={showToast}
+            />
           </ProtectedRoute>
         );
+
       case 'change-password':
         return (
           <ProtectedRoute navigate={navigate}>
-            <ChangePassword navigate={navigate} onShowToast={showToast} />
+            <ChangePassword
+              navigate={navigate}
+              onShowToast={showToast}
+            />
           </ProtectedRoute>
         );
+
       default:
         return <NotFound navigate={navigate} />;
     }
@@ -108,22 +190,50 @@ function AppContent() {
 
   return (
     <div className="app-container">
-      <Navbar currentRoute={currentRoute} navigate={navigate} />
 
+      {/* --------------------------------
+          Navigation Bar
+      -------------------------------- */}
+      <Navbar
+        currentRoute={currentRoute}
+        navigate={navigate}
+      />
+
+      {/* --------------------------------
+          Main Application
+      -------------------------------- */}
       <main className="main-content">
         {renderRoute()}
       </main>
 
-      {/* Global Toast Notification */}
+      {/* --------------------------------
+          Global Toast
+      -------------------------------- */}
       {toastMessage && (
         <div className="toast">
-          <span className="pulse-dot" style={{ width: '8px', height: '8px' }}></span>
-          <span>{toastMessage}</span>
+          <span className="toast-indicator"></span>
+
+          <span className="toast-message">
+            {toastMessage}
+          </span>
+
+          <button
+            className="toast-close"
+            onClick={() => setToastMessage('')}
+            aria-label="Close notification"
+          >
+            ×
+          </button>
         </div>
       )}
+
     </div>
   );
 }
+
+// --------------------------------
+// Root Application
+// --------------------------------
 
 export default function App() {
   return (
